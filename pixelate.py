@@ -55,7 +55,7 @@ def get_output_pixel (x, y):
     return 0
 
 
-parser = argparse.ArgumentParser ('TODO', add_help=False)
+parser = argparse.ArgumentParser ('Creates a one-pixel-per-cross-stitch representation of your image', add_help=False)
 
 parser.add_argument('--help', action='help', help='Show this help message and exit')
 
@@ -80,27 +80,26 @@ args = parser.parse_args ()
 if not os.path.isfile (args.input_image):
     raise Exception ('input image does not exist.')
 
-input_image = Image.open (args.input_image)
+with Image.open (args.input_image) as input_image:
+    output_width  = 0
+    output_height = 0
+    tile_size     = 0
+    if args.width is None:
+        output_height = args.height
+        output_width  = int (round (float (input_image.width) / input_image.height * output_height))
+        tile_size     = float (input_image.height) / output_height
+    else:
+        output_width  = args.width
+        output_height = int (round (float (input_image.height) / input_image.width * output_width))
+        tile_size     = float (input_image.width) / output_width
 
-output_width  = 0
-output_height = 0
-tile_size     = 0
-if args.width is None:
-    output_height = args.height
-    output_width  = int (round (float (input_image.width) / input_image.height * output_height))
-    tile_size     = float (input_image.height) / output_height
-else:
-    output_width  = args.width
-    output_height = int (round (float (input_image.height) / input_image.width * output_width))
-    tile_size     = float (input_image.width) / output_width
+    output_image = Image.new ('RGB', (output_width, output_height), 'white')
 
-output_image = Image.new ('RGB', (output_width, output_height), 'white')
+    input_pixels  = input_image.load ()
+    output_pixels = output_image.load ()
 
-input_pixels  = input_image.load ()
-output_pixels = output_image.load ()
+    for i in range (output_height):
+        for j in range (output_width):
+            output_pixels[j, i] = get_output_pixel (j, i)
 
-for i in range (output_height):
-	for j in range (output_width):
-	    output_pixels[j, i] = get_output_pixel (j, i)
-
-output_image.save(args.output_image)
+    output_image.save(args.output_image)

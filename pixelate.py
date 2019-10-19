@@ -104,4 +104,4 @@ with Image.open (args.input_image) as input_image:
         for j in range (output_width):
             output_pixels[j, i] = get_output_pixel (j, i)
 
-    output_image.save(args.output_image)
+    output_image.save (args.output_image)

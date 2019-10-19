@@ -42,14 +42,15 @@ if not os.path.isfile (args.input_image):
     raise Exception ('input image does not exist.')
 
 with Image.open (args.input_image) as input_image:
-    input_pixels = input_image.load ()
-    input_colours = np.zeros ([input_image.width * input_image.height, 3])
+    input_image_rgb = input_image.convert ('RGB')
+    input_pixels = input_image_rgb.load ()
+    input_colours = np.zeros ([input_image_rgb.width * input_image_rgb.height, 3])
 
     # convert "tuple" pixel map provided by the Pillow library to a
     # numpy array
-    for i in range (input_image.height):
-        for j in range (input_image.width):
-            input_colours[i * input_image.width + j] = \
+    for i in range (input_image_rgb.height):
+        for j in range (input_image_rgb.width):
+            input_colours[i * input_image_rgb.width + j] = \
                 colourspaces.RGB_to_YPbPr (np.array (input_pixels[j, i]), Y_boost)
 
     colours_ub = args.max_colours
@@ -64,9 +65,9 @@ with Image.open (args.input_image) as input_image:
         clusters = KMeans (n_clusters=colours_current)
         centroid_distances = clusters.fit_transform (input_colours)
 
-        cluster_dist = np.zeros (input_image.width * input_image.height)
+        cluster_dist = np.zeros (input_image_rgb.width * input_image_rgb.height)
         within_threshold = True
-        for i in range (input_image.height * input_image.width):
+        for i in range (input_image_rgb.height * input_image_rgb.width):
             distance = centroid_distances[i, clusters.labels_[i]]
             cluster_dist[i] = distance
             if distance > args.threshold:
@@ -86,13 +87,13 @@ with Image.open (args.input_image) as input_image:
     required_colours = len (clusters.cluster_centers_)#colours_ub
     print ("Required colours = {0}".format (required_colours))
 
-    output_image = Image.new ('RGB', (input_image.width, input_image.height), 'white')
+    output_image = Image.new ('RGB', (input_image_rgb.width, input_image_rgb.height), 'white')
     output_pixels = output_image.load ()
 
     output_colours = [clusters_ub.cluster_centers_[x] for x in clusters_ub.predict (input_colours)]
-    for i in range (input_image.height):
-        for j in range (input_image.width):
-            current_pixel = colourspaces.YPbPr_to_RGB (output_colours[i * input_image.width + j], Y_boost)
+    for i in range (input_image_rgb.height):
+        for j in range (input_image_rgb.width):
+            current_pixel = colourspaces.YPbPr_to_RGB (output_colours[i * input_image_rgb.width + j], Y_boost)
             current_pixel_i = [0, 0, 0]
             for c in range (3):
                 current_pixel_i[c] = int (round (current_pixel[c]))

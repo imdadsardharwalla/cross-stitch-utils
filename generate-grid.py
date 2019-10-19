@@ -16,7 +16,7 @@ import common.colourspaces as colourspaces
 
 from PIL import Image
 
-tile_size = 50
+tile_size = 100
 
 parser = argparse.ArgumentParser ('TODO', add_help=False)
 
@@ -35,11 +35,12 @@ if not os.path.isfile (args.input_image):
     raise Exception ('input image does not exist.')
 
 with Image.open (args.input_image) as input_image:
-    input_pixels = input_image.load ()
+    input_image_rgb = input_image.convert ('RGB')
+    input_pixels = input_image_rgb.load ()
 
     input_colours_rgb = set ()
-    for i in range (input_image.height):
-        for j in range (input_image.width):
+    for i in range (input_image_rgb.height):
+        for j in range (input_image_rgb.width):
             input_colours_rgb.update ([ input_pixels[j, i] ])
 
     input_colours_rgb_matrix = [ list (x) for x in input_colours_rgb ]
@@ -70,13 +71,13 @@ with Image.open (args.input_image) as input_image:
     symbols = [ x.resize ((tile_size, tile_size)) for x in symbols_original ]
 
     border_depth = int (round (tile_size * 0.07))
-    grid_width  = input_image.width  * (tile_size + border_depth) - border_depth
-    grid_height = input_image.height * (tile_size + border_depth) - border_depth
+    grid_width  = input_image_rgb.width  * (tile_size + border_depth) - border_depth
+    grid_height = input_image_rgb.height * (tile_size + border_depth) - border_depth
 
     output_image = Image.new ('RGBA', (grid_width, grid_height), 'white')
 
-    for i in range (input_image.height):
-        for j in range (input_image.width):
+    for i in range (input_image_rgb.height):
+        for j in range (input_image_rgb.width):
             index = colour_palette.index (input_pixels[j, i])
             output_image.paste (symbols[index], \
                                 (j * (tile_size + border_depth), i * (tile_size + border_depth)), \
@@ -86,13 +87,13 @@ with Image.open (args.input_image) as input_image:
     light_border = tuple ((192, 192, 192, 255))
 
     output_pixels = output_image.load ()
-    for i in range (1, input_image.height - 1):
+    for i in range (1, input_image_rgb.height - 1):
         for x in range (grid_width):
             for y in range (border_depth):
                 border_colour = dark_border if (i % 10 == 0) else light_border
                 output_pixels[x, i * (tile_size + border_depth) - y] = border_colour
 
-    for j in range (1, input_image.width - 1):
+    for j in range (1, input_image_rgb.width - 1):
         for y in range (grid_height):
             for x in range (border_depth):
                 border_colour = dark_border if (j % 10 == 0) else light_border
